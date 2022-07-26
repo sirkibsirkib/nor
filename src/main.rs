@@ -3,6 +3,11 @@ struct Var {
     index: u8, // only using 6 bits
 }
 
+enum Formula {
+    Var(Var),
+    Nor(Vec<Formula>),
+}
+
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq)]
 struct VarSet {
     bit_set: u64,
@@ -35,6 +40,12 @@ impl VarSet {
         }
         me
     }
+    fn contains(self, var: Var) -> bool {
+        self != self.removed(var)
+    }
+    fn is_subset(self, other: Self) -> bool {
+        self.differed(other) == Self::default()
+    }
     fn add(&mut self, var: Var) {
         *self = self.added(var)
     }
@@ -55,6 +66,36 @@ impl VarSet {
     }
     fn intersected(self, other: Self) -> Self {
         Self { bit_set: self.bit_set & other.bit_set }
+    }
+}
+impl Kb {
+    fn test_var(&self, var: Var) -> Option<bool> {
+        if self.vars_true.contains(var) {
+            Some(true)
+        } else if self.vars_fals.contains(var) {
+            Some(false)
+        } else {
+            None
+        }
+    }
+    fn test_formula(&self, formula: &Formula) -> Option<bool> {
+        match formula {
+            Formula::Var(var) => self.test_var(*var),
+            Formula::Nor(formulae) => {
+                let mut saw_u = false;
+                for f in formulae {
+                    match self.test_formula(f) {
+                        Some(true) => return Some(false),
+                        None => saw_u = true,
+                        Some(false) => {}
+                    }
+                }
+                match saw_u {
+                    true => None,
+                    false => Some(true),
+                }
+            }
+        }
     }
 }
 
