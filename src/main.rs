@@ -1,8 +1,9 @@
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 struct Var {
     index: u8, // only using 6 bits
 }
 
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd)]
 enum Formula {
     Var(Var),
     Nor(Vec<Formula>),
@@ -21,7 +22,7 @@ struct Kb {
 const VAR: [Var; 4] = [Var { index: 0 }, Var { index: 1 }, Var { index: 2 }, Var { index: 3 }];
 impl Var {
     fn new(index: u8) -> Option<Self> {
-        if index < 0b111111 {
+        if index <= 0b111111 {
             Some(Self { index })
         } else {
             None
@@ -66,6 +67,51 @@ impl VarSet {
     }
     fn intersected(self, other: Self) -> Self {
         Self { bit_set: self.bit_set & other.bit_set }
+    }
+}
+impl Formula {
+    fn normalize(self) -> Self {
+        match self {
+            x @ Self::Var(_) => x,
+            Self::Nor(mut formulae) => {
+                if let [only] = &mut formulae[..] {
+                    // special case: drop double negation
+                    let mut dummy = Self::Var(VAR[0]);
+                    std::mem::swap(&mut dummy, only);
+                    return dummy.normalize();
+                } else {
+                    let mut formulae: Vec<Self> =
+                        formulae.into_iter().map(Self::normalize).collect();
+                    formulae.sort();
+                    formulae.dedup();
+                    Self::Nor(formulae)
+                }
+            }
+        }
+    }
+    fn top() -> Self {
+        Self::Nor(vec![])
+    }
+    fn bot(self) -> Self {
+        Self::top().not()
+    }
+    fn not(self) -> Self {
+        Self::Nor(vec![self])
+    }
+    fn nor(formulae: Vec<Self>) -> Self {
+        Self::Nor(formulae)
+    }
+    fn or(formulae: Vec<Self>) -> Self {
+        Self::nor(formulae).not()
+    }
+    fn and(formulae: Vec<Self>) -> Self {
+        Self::nor(formulae.into_iter().map(Self::not).collect())
+    }
+    fn nand(formulae: Vec<Self>) -> Self {
+        Self::and(formulae).not()
+    }
+    fn var(var: Var) -> Self {
+        Self::Var(var)
     }
 }
 impl Kb {
