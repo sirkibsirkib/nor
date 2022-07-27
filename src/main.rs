@@ -269,29 +269,15 @@ impl Kb {
             None
         }
     }
-    fn test_formula_inner(&self, formula: &Formula) -> Option<bool> {
-        match formula {
-            Formula::Var { var } => self.test_var(*var),
-            Formula::Nor { formulae } => {
-                let mut saw_u = false;
-                for f in formulae {
-                    match self.test_formula(f) {
-                        Some(true) => return Some(false),
-                        None => saw_u = true,
-                        Some(false) => {}
-                    }
-                }
-                match saw_u {
-                    true => None,
-                    false => Some(true),
-                }
-            }
+    fn test_formula(&self, formula: Formula) -> Option<bool> {
+        let x = self.simplify_formula(formula);
+        if x == Formula::top() {
+            Some(true)
+        } else if x == Formula::bottom() {
+            Some(false)
+        } else {
+            None
         }
-    }
-    fn test_formula(&self, formula: &Formula) -> Option<bool> {
-        let ret = self.test_formula_inner(formula);
-        println!("T({:?}) = {:?}", formula, ret);
-        ret
     }
     fn simplify_formula(&self, formula: Formula) -> Formula {
         match formula {
@@ -307,26 +293,6 @@ impl Kb {
         }
         .normify()
     }
-    // fn make_true(&self, formula: &Formula) -> Formula {
-    //     match formula {
-    //         Formula::Var { var } => match self.test_var(*var) {
-    //             Some(true) => Formula::top(),
-    //             Some(false) => Formula::bottom(),
-    //             None => formula.clone(),
-    //         },
-    //         Formula::Nor { formulae } => {
-    //             let mut new = Vec::with_capacity(formulae.len());
-    //             for f in formulae {
-    //                 match self.test_formula(f) {
-    //                     Some(false) => {}
-    //                     Some(true) => return Formula::bottom(),
-    //                     None => new.push(f.clone().not()),
-    //                 }
-    //             }
-    //             return Formula::Nor { formulae: new }.not().normal();
-    //         }
-    //     }
-    // }
 }
 
 fn main() {
@@ -335,10 +301,6 @@ fn main() {
         vars_true: VarSet::from_iter([V[0]]), // true
         vars_fals: VarSet::from_iter([V[1]]), // false
     };
-    // println!("{:?}", kb);
-    // let query =
-    //     Formula::var(V[0]).and(Formula::var(V[3])).not().not().yimpl(Formula::top()).normal();
-    // println!("{:?}", kb.test_formula(&query));
 
     for form in [
         // wah
@@ -348,7 +310,7 @@ fn main() {
         Formula::bottom().not(),
         Formula::Var { var: V[0] }.not().not(),
         Formula::Var { var: V[1] }.not().not().nor(Formula::top()).not(),
-        Formula::Var { var: V[2] }.nor(Formula::top()),
+        Formula::Var { var: V[2] }.nor(Formula::Var { var: V[2] }),
     ] {
         println!(
             "form: {:?} => {:?} ## {:?}",
