@@ -10,7 +10,10 @@ pub fn main() {
         vars_true: VarSet::from_iter([V[0]]), // true
         vars_fals: VarSet::from_iter([V[0]]), // false
     };
-    let formula = Formula::var(V[0]).and(Formula::var(V[1])).and(Formula::var(V[1]));
+    let mut formula = Formula::var(V[0]).and(Formula::var(V[1])).and(Formula::var(V[1]));
     println!("{:#?}\n ==>", formula);
-    println!("{:#?}", formula.simplify_with_kb(&kb));
+    formula = formula.var_elim_with(&kb);
+    println!("{:#?}\n ==>", formula);
+    formula = formula.simplify();
+    println!("{:#?}\n", formula);
 }

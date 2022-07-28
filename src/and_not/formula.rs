@@ -144,11 +144,9 @@ impl Formula {
         });
         self
     }
-    pub fn simplify_with_kb(mut self, kb: &Kb) -> Self {
+    pub fn var_elim_with(mut self, kb: &Kb) -> Self {
         self.depth_first_visit_mut(&mut move |formula| {
-            formula.replace(&mut move |f| {
-                f.var_elim(kb).not_not_elim().and_flatten().top_elim().and_elim()
-            })
+            formula.replace(&mut move |f| f.var_elim(kb))
         });
         self
     }
