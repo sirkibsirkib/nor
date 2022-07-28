@@ -23,6 +23,11 @@ impl<'a, T> VecMutQ<'a, T> {
     pub fn add_unprocessed(&mut self, t: T) {
         self.vec.push(t)
     }
+    pub fn extend_processed(&mut self, ts: impl IntoIterator<Item = T>) {
+        for t in ts {
+            self.add_processed(t);
+        }
+    }
     pub fn add_processed(&mut self, t: T) {
         self.vec.push(t);
         self.processed_before += 1;

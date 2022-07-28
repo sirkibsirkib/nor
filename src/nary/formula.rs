@@ -15,11 +15,12 @@ impl fmt::Debug for Formula {
         match self {
             Self::Var { var } => var.fmt(f),
             Self::Nor { formulae } => {
-                f.write_fmt(format_args!("["))?;
-                for formula in formulae {
-                    formula.fmt(f)?;
-                }
-                f.write_fmt(format_args!("]"))
+                f.debug_list().entries(formulae).finish()
+                // f.write_fmt(format_args!("["))?;
+                // for formula in formulae {
+                //     formula.fmt(f)?;
+                // }
+                // f.write_fmt(format_args!("]"))
             }
         }
     }
